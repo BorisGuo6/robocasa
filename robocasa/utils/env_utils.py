@@ -66,6 +66,60 @@ def create_env(
     return env
 
 
+def create_env_from_metadata(
+    env_meta,
+    env_name=None,
+    render=False,
+    render_offscreen=False,
+    use_image_obs=False,
+    use_depth_obs=False,
+):
+    """
+    Create environment.
+
+    Args:
+        env_meta (dict): environment metadata, which should be loaded from demonstration
+            hdf5 with @FileUtils.get_env_metadata_from_dataset or from checkpoint (see
+            @FileUtils.env_from_checkpoint). Contains 3 keys:
+
+                :`'env_name'`: name of environment
+                :`'type'`: type of environment, should be a value in EB.EnvType
+                :`'env_kwargs'`: dictionary of keyword arguments to pass to environment constructor
+
+        env_name (str): name of environment. Only needs to be provided if making a different
+            environment from the one in @env_meta.
+
+        render (bool): if True, environment supports on-screen rendering
+
+        render_offscreen (bool): if True, environment supports off-screen rendering. This
+            is forced to be True if @use_image_obs is True.
+
+        use_image_obs (bool): if True, environment is expected to render rgb image observations
+            on every env.step call. Set this to False for efficiency reasons, if image
+            observations are not required.
+
+        use_depth_obs (bool): if True, environment is expected to render depth image observations
+            on every env.step call. Set this to False for efficiency reasons, if depth
+            observations are not required.
+    """
+    if env_name is None:
+        env_name = env_meta["env_name"]
+    env_type = get_env_type(env_meta=env_meta)
+    env_kwargs = env_meta["env_kwargs"]
+
+    env = create_env(
+        env_type=env_type,
+        env_name=env_name,
+        render=render,
+        render_offscreen=render_offscreen,
+        use_image_obs=use_image_obs,
+        use_depth_obs=use_depth_obs,
+        **env_kwargs,
+    )
+    check_env_version(env, env_meta)
+    return env
+
+
 def run_random_rollouts(env, num_rollouts, num_steps, video_path=None):
     video_writer = None
     if video_path is not None:
